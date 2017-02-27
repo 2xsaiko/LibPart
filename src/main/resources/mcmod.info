@@ -1,0 +1,16 @@
+[
+{
+  "modid": "libpart",
+  "name": "LibPart",
+  "description": "Allows you to combine block and tile entity classes into one class.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "https://github.com/MRebhan/LibPart",
+  "updateUrl": "",
+  "authorList": ["MRebhan"],
+  "credits": "",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
