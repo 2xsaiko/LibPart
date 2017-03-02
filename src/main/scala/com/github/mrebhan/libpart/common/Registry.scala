@@ -1,11 +1,11 @@
 package com.github.mrebhan.libpart.common
 
+import com.github.mrebhan.libpart.LibPart
 import com.github.mrebhan.libpart.common.block.BlockPart
 import com.github.mrebhan.libpart.common.part.IPart
-import mcmultipart.api.item.ItemBlockMultipart
-import mcmultipart.multipart.MultipartRegistry
+import net.minecraft.block.Block
 import net.minecraft.block.state.BlockStateContainer
-import net.minecraft.item.ItemBlock
+import net.minecraft.item.{Item, ItemBlock}
 import net.minecraft.util.ResourceLocation
 import net.minecraftforge.fml.common.Loader
 import net.minecraftforge.fml.common.registry.GameRegistry
@@ -20,8 +20,12 @@ object Registry {
   private val map = new mutable.HashMap[ResourceLocation, Class[_ <: IPart]]()
   private val revMap = new mutable.HashMap[Class[_ <: IPart], ResourceLocation]()
   private val blocksMap = new mutable.HashMap[ResourceLocation, BlockPart]()
+  private val itemsMap = new mutable.HashMap[ResourceLocation, List[Item]]()
 
-  def registerPart(clazz: Class[_ <: IPart], path: String, asMultipart: Boolean = true): ItemBlock = {
+  //         ↓  I don't know if this does what I think it does
+  private[libpart] lazy val multipartQueue = new mutable.Queue[AnyRef]()
+
+  def registerPart(clazz: Class[_ <: IPart], path: String, toitem: (Block, ResourceLocation) => List[Item] = std_toitem, asMultipart: Boolean = true): Item = {
     if (clazz == null) throw new IllegalArgumentException("Part class must not be null!")
     if (path == null) throw new IllegalArgumentException("Path must not be null!")
     val rl = getResourceLocation(path)
@@ -36,19 +40,23 @@ object Registry {
     val block = new BlockPart(rl)
     blocksMap.put(rl, block)
     GameRegistry.register(block)
-    val item =
-      if (asMultipart) {
-        MultipartRegistry.INSTANCE.registerPartWrapper(block, block.Multipart)
-        new ItemBlockMultipart(block, block.Multipart)
+    val items = toitem(block, rl)
+    if (asMultipart) {
+      if (LibPart.multipartCompat) {
+        multipartQueue += block
+        multipartQueue ++= items
       } else {
-        new ItemBlock(block)
+        LibPart.LOGGER.error(s"MCMultipart is not loaded! The part $path ($clazz) could not be registered as a multipart. Some functionality of the block will not be present.")
       }
-    item.setRegistryName(rl)
-    item.setUnlocalizedName(rl.toString)
-    GameRegistry.register(item)
+    }
+    for (item <- items) GameRegistry.register(item)
 
-    item
+    itemsMap.put(rl, items)
+
+    items.head
   }
+
+  private def std_toitem(b: Block, rl: ResourceLocation) = new ItemBlock(b).setRegistryName(rl).setUnlocalizedName(rl.toString) :: Nil
 
   def getPartClass(rl: ResourceLocation): Class[_ <: IPart] = map.get(rl).orNull
 

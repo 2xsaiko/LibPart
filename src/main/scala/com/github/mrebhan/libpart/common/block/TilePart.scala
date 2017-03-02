@@ -2,12 +2,13 @@ package com.github.mrebhan.libpart.common.block
 
 import com.github.mrebhan.libpart.LibPart
 import com.github.mrebhan.libpart.common.Registry
+import com.github.mrebhan.libpart.common.mcmpcompat.TileMultipart
 import com.github.mrebhan.libpart.common.part.IPart
-import mcmultipart.api.multipart.IMultipartTile
+import io.netty.buffer.Unpooled
 import mcmultipart.api.ref.MCMPCapabilities
 import net.minecraft.nbt.NBTTagCompound
-import net.minecraft.network.NetworkManager
 import net.minecraft.network.play.server.SPacketUpdateTileEntity
+import net.minecraft.network.{NetworkManager, PacketBuffer}
 import net.minecraft.tileentity.TileEntity
 import net.minecraft.util.{EnumFacing, ITickable, ResourceLocation}
 import net.minecraftforge.common.capabilities.Capability
@@ -22,7 +23,7 @@ class TilePart(var rl: ResourceLocation) extends TileEntity {
 
   private var part: IPart = if (rl == null) null else createPart()
 
-  private val mp = new TilePart.Multipart(this)
+  private lazy val mp = new TileMultipart(this)
 
   private var rerender = false
 
@@ -50,22 +51,29 @@ class TilePart(var rl: ResourceLocation) extends TileEntity {
   override def readFromNBT(nbt: NBTTagCompound): Unit = {
     super.readFromNBT(nbt)
     rl = new ResourceLocation(nbt.getString("PartType"))
-    if (part == null) part = createPart()
+    part = createPart()
     readPartInfo(nbt)
   }
 
-  override def onDataPacket(net: NetworkManager, pkt: SPacketUpdateTileEntity): Unit = {
-    super.onDataPacket(net, pkt)
-    readPartInfo(pkt.getNbtCompound)
-    rl = new ResourceLocation(pkt.getNbtCompound.getString("PartType"))
-    if (pkt.getNbtCompound.getBoolean("ShouldRefresh")) {
+  override def handleUpdateTag(nbt: NBTTagCompound): Unit = {
+    part.readUpdatePacket(new PacketBuffer(Unpooled.wrappedBuffer(nbt.getByteArray("PartData"))))
+    rl = new ResourceLocation(nbt.getString("PartType"))
+    if (nbt.getBoolean("ShouldRefresh")) {
       getWorld.markBlockRangeForRenderUpdate(getPos, getPos)
     }
   }
 
+  override def onDataPacket(net: NetworkManager, pkt: SPacketUpdateTileEntity): Unit = {
+    handleUpdateTag(pkt.getNbtCompound)
+  }
+
   override def getUpdateTag: NBTTagCompound = {
     val tag = super.getUpdateTag
-    writePartInfo(tag)
+    val buf = new PacketBuffer(Unpooled.buffer())
+    part.writeUpdatePacket(buf)
+    val arr = new Array[Byte](buf.writerIndex())
+    System.arraycopy(buf.array(), buf.arrayOffset(), arr, 0, arr.length)
+    tag.setByteArray("PartData", arr)
     tag.setString("PartType", rl.toString)
     tag.setBoolean("ShouldRefresh", rerender)
     rerender = false
@@ -113,10 +121,6 @@ object TilePart {
     def this() = this(null)
 
     override def update(): Unit = getPart.asInstanceOf[ITickable].update()
-  }
-
-  class Multipart(tile: TilePart) extends IMultipartTile {
-    override def getTileEntity: TileEntity = tile
   }
 
 }

@@ -2,23 +2,17 @@ package com.github.mrebhan.libpart.common.block
 
 import com.github.mrebhan.libpart.LibPart
 import com.github.mrebhan.libpart.common.Registry
+import com.github.mrebhan.libpart.common.mcmpcompat.MPUtils
 import com.github.mrebhan.libpart.common.part.IPart
-import mcmultipart.MCMultiPart
-import mcmultipart.api.container.IPartInfo
-import mcmultipart.api.multipart.IMultipart
-import mcmultipart.api.slot.IPartSlot
-import mcmultipart.block.BlockMultipartContainer
 import net.minecraft.block.state.{BlockStateContainer, IBlockState}
 import net.minecraft.block.{Block, ITileEntityProvider}
-import net.minecraft.client.Minecraft
 import net.minecraft.client.multiplayer.WorldClient
-import net.minecraft.entity.EntityLivingBase
 import net.minecraft.entity.player.EntityPlayer
+import net.minecraft.item.ItemStack
 import net.minecraft.tileentity.TileEntity
-import net.minecraft.util.math.{AxisAlignedBB, BlockPos}
+import net.minecraft.util.math.{AxisAlignedBB, BlockPos, RayTraceResult}
 import net.minecraft.util.{EnumFacing, EnumHand, ITickable, ResourceLocation}
 import net.minecraft.world.{IBlockAccess, World}
-import net.minecraftforge.fml.relauncher.{Side, SideOnly}
 
 /**
   * Created by marco on 27.02.17.
@@ -48,9 +42,11 @@ class BlockPart(rl: ResourceLocation) extends Block(Registry.getPartClass(rl).ne
 
   override def getSelectedBoundingBox(state: IBlockState, worldIn: World, pos: BlockPos): AxisAlignedBB = getPartAt(worldIn, pos).getSelectionBox.offset(pos)
 
-  override def getCollisionBoundingBox(blockState: IBlockState, worldIn: IBlockAccess, pos: BlockPos): AxisAlignedBB = getPartAt(worldIn, pos, false).getBoundingBox
+  override def getCollisionBoundingBox(blockState: IBlockState, worldIn: IBlockAccess, pos: BlockPos): AxisAlignedBB = getPartAt(worldIn, pos, warn = false).getBoundingBox
 
-  override def getBoundingBox(state: IBlockState, source: IBlockAccess, pos: BlockPos): AxisAlignedBB = getPartAt(source, pos).getSelectionBox
+  override def getBoundingBox(state: IBlockState, source: IBlockAccess, pos: BlockPos): AxisAlignedBB = getPartAt(source, pos, warn = false).getSelectionBox
+
+  override def getPickBlock(state: IBlockState, target: RayTraceResult, world: World, pos: BlockPos, player: EntityPlayer): ItemStack = getPartAt(world, pos).getPickBlock
 
   def createPart(): IPart = Registry.getPartClass(rl).newInstance()
 
@@ -58,8 +54,8 @@ class BlockPart(rl: ResourceLocation) extends Block(Registry.getPartClass(rl).ne
     world.getTileEntity(pos) match {
       case te: TilePart => te
       case _ =>
-        if (world.isInstanceOf[WorldClient]) {
-          getTileFromHit(world, pos)
+        if (world.isInstanceOf[WorldClient] && LibPart.multipartCompat) {
+          MPUtils.getTileFromHit(world, pos)
         } else {
           if (warn) LibPart.LOGGER.warn(s"There's no tile at $pos when there should be!")
           null
@@ -74,25 +70,7 @@ class BlockPart(rl: ResourceLocation) extends Block(Registry.getPartClass(rl).ne
         if (giveMeDefault) defaultPart else null
     }
 
-  @SideOnly(Side.CLIENT)
-  private def getTileFromHit(world: IBlockAccess, pos: BlockPos): TilePart = {
-    val hit = Minecraft.getMinecraft.objectMouseOver
-    var te: TileEntity = null
-    if (world.getBlockState(pos).getBlock == MCMultiPart.multipart) {
-      val tile = BlockMultipartContainer.getTile(world, pos)
-      if (tile.isPresent) {
-        val slotID = hit.subHit
-        val info = tile.get.getParts.get(MCMultiPart.slotRegistry.getObjectById(slotID))
-        if (info != null)
-          te = info.getTile.getTileEntity
-      }
-    }
-    te match {
-      case part: TilePart => part
-      case _ => null
-    }
-  }
-
+  @SuppressWarnings(Array("deprecation"))
   override def getPlayerRelativeBlockHardness(state: IBlockState, player: EntityPlayer, worldIn: World, pos: BlockPos): Float = {
     val part1 = getPartAt(worldIn, pos)
     if (part1 != null) {
@@ -120,17 +98,7 @@ class BlockPart(rl: ResourceLocation) extends Block(Registry.getPartClass(rl).ne
   }
 
   override def onBlockActivated(worldIn: World, pos: BlockPos, state: IBlockState, playerIn: EntityPlayer, hand: EnumHand, facing: EnumFacing, hitX: Float, hitY: Float, hitZ: Float): Boolean = {
-    getPartAt(worldIn, pos, true, false).onActivated(worldIn, pos, state, playerIn, hand, facing, hitX, hitY, hitZ)
-  }
-
-  object Multipart extends IMultipart {
-    override def getBlock: Block = BlockPart.this
-
-    override def getSlotFromWorld(world: IBlockAccess, pos: BlockPos, state: IBlockState): IPartSlot = createPart().getSlot
-
-    override def getSlotForPlacement(world: World, pos: BlockPos, state: IBlockState, facing: EnumFacing, hitX: Float, hitY: Float, hitZ: Float, placer: EntityLivingBase): IPartSlot = createPart().getSlot
-
-    override def getBoundingBox(part: IPartInfo): AxisAlignedBB = part.getTile.getTileEntity.asInstanceOf[TilePart].getPart.getSelectionBox
+    getPartAt(worldIn, pos, giveMeDefault = false).onActivated(worldIn, pos, state, playerIn, hand, facing, hitX, hitY, hitZ)
   }
 
 }
