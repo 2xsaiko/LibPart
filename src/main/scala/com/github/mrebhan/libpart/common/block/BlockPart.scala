@@ -7,6 +7,7 @@ import com.github.mrebhan.libpart.common.part.IPart
 import net.minecraft.block.state.{BlockStateContainer, IBlockState}
 import net.minecraft.block.{Block, ITileEntityProvider}
 import net.minecraft.client.multiplayer.WorldClient
+import net.minecraft.entity.EntityLivingBase
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.item.ItemStack
 import net.minecraft.tileentity.TileEntity
@@ -28,6 +29,8 @@ class BlockPart(rl: ResourceLocation) extends Block(Registry.getPartClass(rl).ne
   setRegistryName(rl)
   setUnlocalizedName(rl.toString)
 
+  override def onBlockPlacedBy(worldIn: World, pos: BlockPos, state: IBlockState, placer: EntityLivingBase, stack: ItemStack): Unit = getPartAt(worldIn, pos).onPlacedBy(placer, stack)
+
   override def createBlockState(): BlockStateContainer = defaultPart.createBlockState(this)
 
   override def getActualState(state: IBlockState, worldIn: IBlockAccess, pos: BlockPos): IBlockState = getPartAt(worldIn, pos).getActualState(state)
@@ -38,7 +41,7 @@ class BlockPart(rl: ResourceLocation) extends Block(Registry.getPartClass(rl).ne
 
   override def getMetaFromState(state: IBlockState): Int = 0
 
-  override def isOpaqueCube(state: IBlockState): Boolean = false
+  override def isOpaqueCube(state: IBlockState): Boolean = defaultPart.isFullBlock
 
   override def getSelectedBoundingBox(state: IBlockState, worldIn: World, pos: BlockPos): AxisAlignedBB = getPartAt(worldIn, pos).getSelectionBox.offset(pos)
 
