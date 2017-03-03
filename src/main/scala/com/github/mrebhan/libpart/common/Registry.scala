@@ -2,10 +2,10 @@ package com.github.mrebhan.libpart.common
 
 import com.github.mrebhan.libpart.LibPart
 import com.github.mrebhan.libpart.common.block.BlockPart
+import com.github.mrebhan.libpart.common.item.ItemBlockExtended
 import com.github.mrebhan.libpart.common.part.IPart
-import net.minecraft.block.Block
 import net.minecraft.block.state.BlockStateContainer
-import net.minecraft.item.{Item, ItemBlock}
+import net.minecraft.item.Item
 import net.minecraft.util.ResourceLocation
 import net.minecraftforge.fml.common.Loader
 import net.minecraftforge.fml.common.registry.GameRegistry
@@ -25,7 +25,7 @@ object Registry {
   //         ↓  I don't know if this does what I think it does
   private[libpart] lazy val multipartQueue = new mutable.Queue[AnyRef]()
 
-  def registerPart(clazz: Class[_ <: IPart], path: String, asMultipart: Boolean = true, toitem: (Block, ResourceLocation) => List[Item] = std_toitem): Item = {
+  def registerPart(clazz: Class[_ <: IPart], path: String, asMultipart: Boolean = true, toitem: (BlockPart, ResourceLocation) => List[Item] = std_toitem): Item = {
     if (clazz == null) throw new IllegalArgumentException("Part class must not be null!")
     if (path == null) throw new IllegalArgumentException("Path must not be null!")
     val rl = getResourceLocation(path)
@@ -56,7 +56,7 @@ object Registry {
     items.head
   }
 
-  private def std_toitem(b: Block, rl: ResourceLocation) = new ItemBlock(b).setRegistryName(rl).setUnlocalizedName(rl.toString) :: Nil
+  private def std_toitem(b: BlockPart, rl: ResourceLocation) = new ItemBlockExtended(b).setRegistryName(rl).setUnlocalizedName(rl.toString) :: Nil
 
   def getPartClass(rl: ResourceLocation): Class[_ <: IPart] = map.get(rl).orNull
 

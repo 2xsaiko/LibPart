@@ -78,7 +78,7 @@ public interface IPart {
         return layer == BlockRenderLayer.SOLID;
     }
 
-    default void onPlacedBy(EntityLivingBase e, ItemStack stack) {}
+    default void onPlacedBy(EntityLivingBase e, ItemStack stack, EnumFacing side) {}
 
     default BlockStateContainer createBlockState(Block block) {
         return new BlockStateContainer(block);

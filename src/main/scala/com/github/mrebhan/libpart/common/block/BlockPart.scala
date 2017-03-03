@@ -36,7 +36,9 @@ class BlockPart(rl: ResourceLocation) extends Block(Registry.getPartClass(rl).ne
 
   override def canPlaceBlockAt(worldIn: World, pos: BlockPos): Boolean = defaultPart.canPlaceAt(worldIn, pos)
 
-  override def onBlockPlacedBy(worldIn: World, pos: BlockPos, state: IBlockState, placer: EntityLivingBase, stack: ItemStack): Unit = getPartAt(worldIn, pos).onPlacedBy(placer, stack)
+  override def onBlockPlacedBy(worldIn: World, pos: BlockPos, state: IBlockState, placer: EntityLivingBase, stack: ItemStack): Unit = getPartAt(worldIn, pos).onPlacedBy(placer, stack, null)
+
+  def onBlockPlacedBy(worldIn: World, pos: BlockPos, state: IBlockState, placer: EntityLivingBase, stack: ItemStack, side: EnumFacing): Unit = getPartAt(worldIn, pos).onPlacedBy(placer, stack, side)
 
   override def createBlockState(): BlockStateContainer = defaultPart.createBlockState(this)
 
