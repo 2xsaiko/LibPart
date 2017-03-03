@@ -4,6 +4,7 @@ import com.github.mrebhan.libpart.common.Registry;
 import com.github.mrebhan.libpart.common.block.TilePart;
 import mcmultipart.api.slot.IPartSlot;
 import net.minecraft.block.Block;
+import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
@@ -18,6 +19,7 @@ import net.minecraft.util.EnumHand;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraftforge.common.capabilities.Capability;
 
@@ -61,11 +63,15 @@ public interface IPart {
     }
 
     default boolean canPlaceAt(World world, BlockPos pos) {
-        return true;
+        return world.getBlockState(pos).getBlock().isReplaceable(world, pos);
     }
 
     default boolean canPlaceOnSide(World world, BlockPos pos, EnumFacing side) {
         return canPlaceAt(world, pos);
+    }
+
+    default boolean canStayAt() {
+        return true;
     }
 
     default boolean canRenderInLayer(BlockRenderLayer layer) {
@@ -99,6 +105,10 @@ public interface IPart {
     }
 
     default AxisAlignedBB getSelectionBox() {
+        return getBoundingBox();
+    }
+
+    default AxisAlignedBB getCollisionBox() {
         return getBoundingBox();
     }
 
@@ -158,9 +168,16 @@ public interface IPart {
     @Nonnull
     Material getMaterial();
 
+    @Nonnull
+    SoundType getSoundType();
+
     ItemStack getPickBlock();
 
     default IPartSlot getSlotForPlacement(World world, BlockPos pos, IBlockState state, EnumFacing facing, float hitX, float hitY, float hitZ, EntityLivingBase placer) {
+        return getSlot();
+    }
+
+    default IPartSlot getSlotFromWorld(IBlockAccess world, BlockPos pos, IBlockState state) {
         return getSlot();
     }
 

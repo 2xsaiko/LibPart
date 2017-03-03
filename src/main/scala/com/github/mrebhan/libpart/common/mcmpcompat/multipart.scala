@@ -45,9 +45,10 @@ class TileMultipart(tile: TilePart) extends IMultipartTile {
 class BlockMultipart(block: BlockPart) extends IMultipart {
   override def getBlock: Block = block
 
-  override def getSlotFromWorld(world: IBlockAccess, pos: BlockPos, state: IBlockState): IPartSlot = block.createPart().getSlot // TODO make it get the slot from the existing part
+  override def getSlotFromWorld(world: IBlockAccess, pos: BlockPos, state: IBlockState): IPartSlot = block.defaultPart.getSlotFromWorld(world, pos, state) // TODO make it get the slot from the existing part
 
-  override def getSlotForPlacement(world: World, pos: BlockPos, state: IBlockState, facing: EnumFacing, hitX: Float, hitY: Float, hitZ: Float, placer: EntityLivingBase): IPartSlot = block.createPart().getSlot
+  override def getSlotForPlacement(world: World, pos: BlockPos, state: IBlockState, facing: EnumFacing, hitX: Float, hitY: Float, hitZ: Float, placer: EntityLivingBase): IPartSlot =
+    block.defaultPart.getSlotForPlacement(world, pos, state, facing, hitX, hitY, hitZ, placer)
 
   override def getBoundingBox(part: IPartInfo): AxisAlignedBB = part.getTile.getTileEntity.asInstanceOf[TilePart].getPart.getSelectionBox
 }

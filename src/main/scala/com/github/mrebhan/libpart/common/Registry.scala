@@ -25,7 +25,7 @@ object Registry {
   //         ↓  I don't know if this does what I think it does
   private[libpart] lazy val multipartQueue = new mutable.Queue[AnyRef]()
 
-  def registerPart(clazz: Class[_ <: IPart], path: String, toitem: (Block, ResourceLocation) => List[Item] = std_toitem, asMultipart: Boolean = true): Item = {
+  def registerPart(clazz: Class[_ <: IPart], path: String, asMultipart: Boolean = true, toitem: (Block, ResourceLocation) => List[Item] = std_toitem): Item = {
     if (clazz == null) throw new IllegalArgumentException("Part class must not be null!")
     if (path == null) throw new IllegalArgumentException("Path must not be null!")
     val rl = getResourceLocation(path)

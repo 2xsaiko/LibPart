@@ -11,8 +11,8 @@ import net.minecraft.entity.EntityLivingBase
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.item.ItemStack
 import net.minecraft.tileentity.TileEntity
+import net.minecraft.util._
 import net.minecraft.util.math.{AxisAlignedBB, BlockPos, RayTraceResult}
-import net.minecraft.util.{EnumFacing, EnumHand, ITickable, ResourceLocation}
 import net.minecraft.world.{IBlockAccess, World}
 
 /**
@@ -28,6 +28,13 @@ class BlockPart(rl: ResourceLocation) extends Block(Registry.getPartClass(rl).ne
 
   setRegistryName(rl)
   setUnlocalizedName(rl.toString)
+  setSoundType(defaultPart.getSoundType)
+
+  override def canRenderInLayer(state: IBlockState, layer: BlockRenderLayer): Boolean = defaultPart.canRenderInLayer(layer)
+
+  override def canPlaceBlockOnSide(worldIn: World, pos: BlockPos, side: EnumFacing): Boolean = defaultPart.canPlaceOnSide(worldIn, pos, side)
+
+  override def canPlaceBlockAt(worldIn: World, pos: BlockPos): Boolean = defaultPart.canPlaceAt(worldIn, pos)
 
   override def onBlockPlacedBy(worldIn: World, pos: BlockPos, state: IBlockState, placer: EntityLivingBase, stack: ItemStack): Unit = getPartAt(worldIn, pos).onPlacedBy(placer, stack)
 
@@ -43,11 +50,13 @@ class BlockPart(rl: ResourceLocation) extends Block(Registry.getPartClass(rl).ne
 
   override def isOpaqueCube(state: IBlockState): Boolean = defaultPart.isFullBlock
 
+  override def isFullCube(state: IBlockState): Boolean = defaultPart.isFullBlock
+
   override def getSelectedBoundingBox(state: IBlockState, worldIn: World, pos: BlockPos): AxisAlignedBB = getPartAt(worldIn, pos).getSelectionBox.offset(pos)
 
-  override def getCollisionBoundingBox(blockState: IBlockState, worldIn: IBlockAccess, pos: BlockPos): AxisAlignedBB = getPartAt(worldIn, pos, warn = false).getBoundingBox
+  override def getCollisionBoundingBox(blockState: IBlockState, worldIn: IBlockAccess, pos: BlockPos): AxisAlignedBB = getPartAt(worldIn, pos, warn = false).getCollisionBox
 
-  override def getBoundingBox(state: IBlockState, source: IBlockAccess, pos: BlockPos): AxisAlignedBB = getPartAt(source, pos, warn = false).getSelectionBox
+  override def getBoundingBox(state: IBlockState, source: IBlockAccess, pos: BlockPos): AxisAlignedBB = getPartAt(source, pos, warn = false).getBoundingBox
 
   override def getPickBlock(state: IBlockState, target: RayTraceResult, world: World, pos: BlockPos, player: EntityPlayer): ItemStack = getPartAt(world, pos).getPickBlock
 
