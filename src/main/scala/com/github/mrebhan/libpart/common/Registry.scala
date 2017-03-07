@@ -24,7 +24,7 @@ object Registry {
   private[libpart] lazy val multipartQueue = new mutable.Queue[AnyRef]()
 
   def registerPart(clazz: Class[_ <: IPart], path: String, asMultipart: Boolean = true,
-                   toitem: ItemBuilder => List[ItemBlock] = std_toitem, callback: ItemBlock => Unit = _ => ()): Unit = {
+                   toitem: ItemBuilder => List[ItemBlock] = std_toitem): List[ItemBlock] = {
     if (clazz == null) throw new IllegalArgumentException("Part class must not be null!")
     if (path == null) throw new IllegalArgumentException("Path must not be null!")
     val rl = getResourceLocation(path)
@@ -39,16 +39,14 @@ object Registry {
     val block = new BlockPart(rl)
     blocksMap.put(rl, block)
     GameRegistry.register(block)
-    if (asMultipart && LibPart.multipartCompat) {
-      multipartQueue += ((block, rl, toitem, callback))
-    } else {
-      if (asMultipart)
-        LibPart.LOGGER.error(s"MCMultipart is not loaded! The part $path ($clazz) could not be registered as a multipart. Some functionality of the block will not be present.")
-      val items = toitem(new DefaultItemBuilder(block, rl))
-      for (item <- items) GameRegistry.register(item)
-      itemsMap.put(rl, items)
-      callback(items.head)
+    val items = toitem(new DefaultItemBuilder(block, rl))
+    for (item <- items) GameRegistry.register(item)
+    itemsMap.put(rl, items)
+    if (asMultipart) {
+      if (LibPart.multipartCompat) multipartQueue ++= block :: items
+      else LibPart.LOGGER.error(s"MCMultipart is not loaded! The part $path ($clazz) could not be registered as a multipart. Some functionality of the block will not be present.")
     }
+    items
   }
 
   private def std_toitem(ib: ItemBuilder): List[ItemBlock] = {

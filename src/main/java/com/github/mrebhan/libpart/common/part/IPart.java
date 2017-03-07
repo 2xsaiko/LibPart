@@ -192,4 +192,9 @@ public interface IPart {
         return false;
     }
 
+    default IBlockState getStateForPlacement(World world, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta,
+                                             EntityLivingBase placer, EnumHand hand, IBlockState state) {
+        return state;
+    }
+
 }
