@@ -6,6 +6,7 @@ import com.github.mrebhan.libpart.common.mcmpcompat.TileMultipart
 import com.github.mrebhan.libpart.common.part.IPart
 import io.netty.buffer.Unpooled
 import mcmultipart.api.ref.MCMPCapabilities
+import net.minecraft.block.state.IBlockState
 import net.minecraft.nbt.NBTTagCompound
 import net.minecraft.network.play.server.SPacketUpdateTileEntity
 import net.minecraft.network.{NetworkManager, PacketBuffer}
@@ -112,6 +113,10 @@ class TilePart(var rl: ResourceLocation) extends TileEntity {
   def createPart(): IPart = Registry.getBlock(rl).createPart().setContainer(this)
 
   def getPartID: ResourceLocation = rl
+
+  def setPlacedState(state: IBlockState): Unit = {
+    part.handlePlacedState(state)
+  }
 
 }
 

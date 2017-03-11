@@ -3,11 +3,12 @@ package com.github.mrebhan.libpart.common.mcmpcompat
 import com.github.mrebhan.libpart.LibPart
 import com.github.mrebhan.libpart.common.Registry
 import com.github.mrebhan.libpart.common.block.{BlockPart, TilePart}
+import com.github.mrebhan.libpart.common.part.{ICustomIntersect, IPart}
 import mcmultipart.MCMultiPart
 import mcmultipart.api.addon.{IMCMPAddon, MCMPAddon}
 import mcmultipart.api.container.IPartInfo
 import mcmultipart.api.item.ItemBlockMultipart
-import mcmultipart.api.multipart.{IMultipart, IMultipartRegistry, IMultipartTile, MultipartHelper}
+import mcmultipart.api.multipart._
 import mcmultipart.api.slot.IPartSlot
 import mcmultipart.block.BlockMultipartContainer
 import net.minecraft.block.Block
@@ -82,6 +83,41 @@ class BlockMultipart(block: BlockPart) extends IMultipart {
 
   def onPartPlacedBy(part: IPartInfo, placer: EntityLivingBase, stack: ItemStack, facing: EnumFacing): Unit = {
     block.onBlockPlacedBy(part.getWorld, part.getPos, part.getState, placer, stack, facing)
+  }
+
+  override def neighborChanged(part: IPartInfo, neighborBlock: Block, neighborPos: BlockPos): Unit = {
+    if (!part.getTile.getTileEntity.asInstanceOf[TilePart].getPart.canStay) {
+      getBlock.dropBlockAsItem(part.getActualWorld, part.getPos, part.getState, 0)
+      part.getContainer.removePart(part.getSlot)
+    }
+  }
+
+  override def testIntersection(self: IPartInfo, otherPart: IPartInfo): Boolean = {
+    val p0 = self.getTile.getTileEntity match {
+      case te: TilePart => te.getPart match {
+        case part: ICustomIntersect => part
+        case _ => null
+      }
+      case _ => null
+    }
+
+    val p1 = otherPart.getTile.getTileEntity match {
+      case te: TilePart => te.getPart match {
+        case part: ICustomIntersect => part
+        case _ => null
+      }
+      case _ => null
+    }
+
+    var b0 = getOcclusionBoxes(self)
+    var b1 = otherPart.getPart.getOcclusionBoxes(otherPart)
+
+    if (p0 != null && p1 != null) {
+      b0 = p0.getIntersectionBB(p1)
+      b1 = p1.getIntersectionBB(p0)
+    }
+
+    MultipartOcclusionHelper.testBoxIntersection(b0, b1)
   }
 }
 

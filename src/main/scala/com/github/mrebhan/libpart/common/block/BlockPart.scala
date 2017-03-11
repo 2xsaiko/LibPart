@@ -46,7 +46,27 @@ class BlockPart(rl: ResourceLocation) extends Block(Registry.getPartClass(rl).ne
 
   override def getExtendedState(state: IBlockState, world: IBlockAccess, pos: BlockPos): IBlockState = getPartAt(world, pos).getExtendedState(state)
 
-  override def createNewTileEntity(worldIn: World, meta: Int): TileEntity = if (defaultPart.isInstanceOf[ITickable]) new TilePart.Ticking(rl) else new TilePart(rl)
+  override def createTileEntity(world: World, state: IBlockState): TileEntity = {
+    val tile = if (defaultPart.isInstanceOf[ITickable]) new TilePart.Ticking(rl)
+    else new TilePart(rl)
+    tile.setPlacedState(state)
+
+    tile
+  }
+
+  override def createNewTileEntity(worldIn: World, meta: Int): TileEntity = {
+    LibPart.LOGGER.warn("createNewTileEntity called! Call createTileEntity() instead.")
+    Thread.currentThread.getStackTrace.foreach(LibPart.LOGGER.warn)
+    if (defaultPart.isInstanceOf[ITickable]) new TilePart.Ticking(rl)
+    else new TilePart(rl)
+  }
+
+  override def neighborChanged(state: IBlockState, worldIn: World, pos: BlockPos, blockIn: Block, fromPos: BlockPos): Unit = {
+    if (!getPartAt(worldIn, pos).canStay) {
+      dropBlockAsItem(worldIn, pos, state, 0)
+      worldIn.setBlockToAir(pos)
+    }
+  }
 
   override def getMetaFromState(state: IBlockState): Int = 0
 
@@ -58,7 +78,7 @@ class BlockPart(rl: ResourceLocation) extends Block(Registry.getPartClass(rl).ne
 
   override def getCollisionBoundingBox(blockState: IBlockState, worldIn: IBlockAccess, pos: BlockPos): AxisAlignedBB = getPartAt(worldIn, pos, warn = false).getCollisionBox
 
-  override def getBoundingBox(state: IBlockState, source: IBlockAccess, pos: BlockPos): AxisAlignedBB = getPartAt(source, pos, warn = true).getBoundingBox
+  override def getBoundingBox(state: IBlockState, source: IBlockAccess, pos: BlockPos): AxisAlignedBB = getPartAt(source, pos).getBoundingBox
 
   override def getPickBlock(state: IBlockState, target: RayTraceResult, world: World, pos: BlockPos, player: EntityPlayer): ItemStack = getPartAt(world, pos).getPickBlock
 

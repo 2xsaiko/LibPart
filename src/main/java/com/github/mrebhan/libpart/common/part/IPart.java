@@ -70,7 +70,7 @@ public interface IPart {
         return canPlaceAt(world, pos);
     }
 
-    default boolean canStayAt() {
+    default boolean canStay() {
         return true;
     }
 
@@ -196,5 +196,7 @@ public interface IPart {
                                              EntityLivingBase placer, EnumHand hand, IBlockState state) {
         return state;
     }
+
+    default void handlePlacedState(IBlockState state) {}
 
 }
