@@ -2,11 +2,9 @@ package com.github.mrebhan.libpart.common.block
 
 import com.github.mrebhan.libpart.LibPart
 import com.github.mrebhan.libpart.common.Registry
-import com.github.mrebhan.libpart.common.mcmpcompat.MPUtils
-import com.github.mrebhan.libpart.common.part.IPart
+import com.github.mrebhan.libpart.common.part.{IPart, TPartUtils}
 import net.minecraft.block.state.{BlockStateContainer, IBlockState}
 import net.minecraft.block.{Block, ITileEntityProvider}
-import net.minecraft.client.multiplayer.WorldClient
 import net.minecraft.entity.EntityLivingBase
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.item.ItemStack
@@ -18,13 +16,13 @@ import net.minecraft.world.{IBlockAccess, World}
 /**
   * Created by marco on 27.02.17.
   */
-class BlockPart(rl: ResourceLocation) extends Block(Registry.getPartClass(rl).newInstance().getMaterial) with ITileEntityProvider {
+class BlockPart(rl: ResourceLocation) extends Block(Registry.getPartClass(rl).newInstance().getMaterial) with ITileEntityProvider with TPartUtils {
 
   /**
     * The default part. Do not modify in any way!
     */
 
-  lazy val defaultPart: IPart = createPart()
+  lazy override val defaultPart: IPart = createPart()
 
   setRegistryName(rl)
   setUnlocalizedName(rl.toString)
@@ -62,9 +60,12 @@ class BlockPart(rl: ResourceLocation) extends Block(Registry.getPartClass(rl).ne
   }
 
   override def neighborChanged(state: IBlockState, worldIn: World, pos: BlockPos, blockIn: Block, fromPos: BlockPos): Unit = {
-    if (!getPartAt(worldIn, pos).canStay) {
+    val part = getPartAt(worldIn, pos)
+    if (!part.canStay) {
       dropBlockAsItem(worldIn, pos, state, 0)
       worldIn.setBlockToAir(pos)
+    } else {
+      part.neighborChanged(EnumFacing.VALUES.filter(f => pos.offset(f) == fromPos).head)
     }
   }
 
@@ -83,26 +84,6 @@ class BlockPart(rl: ResourceLocation) extends Block(Registry.getPartClass(rl).ne
   override def getPickBlock(state: IBlockState, target: RayTraceResult, world: World, pos: BlockPos, player: EntityPlayer): ItemStack = getPartAt(world, pos).getPickBlock
 
   def createPart(): IPart = Registry.getPartClass(rl).newInstance()
-
-  def getTileAt(world: IBlockAccess, pos: BlockPos, warn: Boolean = true): TilePart =
-    world.getTileEntity(pos) match {
-      case te: TilePart => te
-      case _ =>
-        if (world.isInstanceOf[WorldClient] && LibPart.multipartCompat) {
-          MPUtils.getTileFromHit(world, pos)
-        } else {
-          if (warn) LibPart.LOGGER.warn(s"There's no tile at $pos when there should be!")
-          null
-        }
-    }
-
-  def getPartAt(world: IBlockAccess, pos: BlockPos, warn: Boolean = true, giveMeDefault: Boolean = true): IPart =
-    getTileAt(world, pos, warn) match {
-      case te: TilePart => te.getPart
-      case _ =>
-        if (warn) LibPart.LOGGER.warn(s"There's no part at $pos when there should be!")
-        if (giveMeDefault) defaultPart else null
-    }
 
   @SuppressWarnings(Array("deprecation"))
   override def getPlayerRelativeBlockHardness(state: IBlockState, player: EntityPlayer, worldIn: World, pos: BlockPos): Float = {

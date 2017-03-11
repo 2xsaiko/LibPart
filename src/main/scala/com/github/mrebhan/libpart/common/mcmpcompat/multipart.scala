@@ -28,21 +28,6 @@ import net.minecraftforge.fml.relauncher.{Side, SideOnly}
   */
 @MCMPAddon
 class MCMPCompat extends IMCMPAddon {
-  //  override def registerParts(registry: IMultipartRegistry): Unit = {
-  //    for (any <- Registry.multipartQueue) {
-  //      any match {
-  //        case x: (BlockPart, ResourceLocation, ItemBuilder => List[ItemBlock], ItemBlock => Unit) =>
-  //          val multipart = new BlockMultipart(x._1)
-  //          registry.registerPartWrapper(x._1, multipart)
-  //          val mib = new MultipartItemBuilder(x._1, x._2, multipart)
-  //          val items = x._3(mib)
-  //          for (item <- items) GameRegistry.register(item)
-  //          Registry.itemsMap.put(x._2, items)
-  //          x._4(items.head)
-  //        case _ => LibPart.LOGGER.warn(s"Invalid object '$any' in multipart registry queue, ignoring.")
-  //      }
-  //    }
-  //  }
 
   override def registerParts(registry: IMultipartRegistry): Unit = {
     for (any <- Registry.multipartQueue) {
@@ -119,6 +104,8 @@ class BlockMultipart(block: BlockPart) extends IMultipart {
 
     MultipartOcclusionHelper.testBoxIntersection(b0, b1)
   }
+
+  override def onPartChanged(part: IPartInfo, otherPart: IPartInfo): Unit = part.getTile.getTileEntity.asInstanceOf[TilePart].getPart.partChanged()
 }
 
 object MPUtils {

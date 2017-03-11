@@ -8,7 +8,7 @@ import net.minecraft.util.ResourceLocation
 /**
   * Created by marco on 24.02.17.
   */
-trait TPart extends IPart {
+trait TPart extends IPart with TPartUtils {
 
   private var container: TilePart = _
 
@@ -22,6 +22,8 @@ trait TPart extends IPart {
   override def getType: ResourceLocation = Registry.getPartType(getClass)
 
   override def getSlot: IPartSlot = ???
+
+  override def defaultPart: IPart = null
 
 }
 

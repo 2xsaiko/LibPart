@@ -199,4 +199,8 @@ public interface IPart {
 
     default void handlePlacedState(IBlockState state) {}
 
+    default void neighborChanged(EnumFacing neighbor) {}
+
+    default void partChanged() {}
+
 }
