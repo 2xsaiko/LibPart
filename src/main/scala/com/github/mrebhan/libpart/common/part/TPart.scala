@@ -4,6 +4,7 @@ import com.github.mrebhan.libpart.common.Registry
 import com.github.mrebhan.libpart.common.block.TilePart
 import mcmultipart.api.slot.IPartSlot
 import net.minecraft.util.ResourceLocation
+import net.minecraft.util.math.BlockPos
 
 /**
   * Created by marco on 24.02.17.
@@ -22,6 +23,10 @@ trait TPart extends IPart with TPartUtils {
   override def getType: ResourceLocation = Registry.getPartType(getClass)
 
   override def getSlot: IPartSlot = ???
+
+  def getTileAt(pos: BlockPos): TilePart = super.getTileAt(getWorld, pos, warn = false)
+
+  def getPartAt(pos: BlockPos): IPart = super.getPartAt(getWorld, pos, warn = false, giveMeDefault = false)
 
   override def defaultPart: IPart = null
 

@@ -90,7 +90,6 @@ class TilePart(var rl: ResourceLocation) extends TileEntity {
       val actualState = part.getActualState(part.getBaseState)
       getWorld.notifyBlockUpdate(getPos, actualState, actualState, 3)
       rerender = reRenderClient
-      LibPart.LOGGER.log(Level.INFO, "Sending update packet!")
     }
   }
 
