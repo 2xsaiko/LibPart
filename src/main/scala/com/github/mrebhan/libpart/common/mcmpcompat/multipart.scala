@@ -3,7 +3,7 @@ package com.github.mrebhan.libpart.common.mcmpcompat
 import com.github.mrebhan.libpart.LibPart
 import com.github.mrebhan.libpart.common.Registry
 import com.github.mrebhan.libpart.common.block.{BlockPart, TilePart}
-import com.github.mrebhan.libpart.common.part.{ICustomIntersect, IPart}
+import com.github.mrebhan.libpart.common.part.ICustomIntersect
 import mcmultipart.MCMultiPart
 import mcmultipart.api.addon.{IMCMPAddon, MCMPAddon}
 import mcmultipart.api.container.IPartInfo
@@ -71,9 +71,12 @@ class BlockMultipart(block: BlockPart) extends IMultipart {
   }
 
   override def neighborChanged(part: IPartInfo, neighborBlock: Block, neighborPos: BlockPos): Unit = {
-    if (!part.getTile.getTileEntity.asInstanceOf[TilePart].getPart.canStay) {
+    val part1 = part.getTile.getTileEntity.asInstanceOf[TilePart].getPart
+    if (!part1.canStay) {
       getBlock.dropBlockAsItem(part.getActualWorld, part.getPos, part.getState, 0)
       part.getContainer.removePart(part.getSlot)
+    } else {
+      part1.neighborChanged(EnumFacing.VALUES.filter(f => neighborPos.offset(f) == part.getPos).head)
     }
   }
 
