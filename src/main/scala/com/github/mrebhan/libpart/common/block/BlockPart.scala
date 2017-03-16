@@ -116,6 +116,12 @@ class BlockPart(rl: ResourceLocation) extends Block(Registry.getPartClass(rl).ne
     getPartAt(worldIn, pos, giveMeDefault = false).onActivated(worldIn, pos, state, playerIn, hand, facing, hitX, hitY, hitZ)
   }
 
+  override def breakBlock(worldIn: World, pos: BlockPos, state: IBlockState): Unit = {
+    val part = getPartAt(worldIn, pos, giveMeDefault = false)
+    super.breakBlock(worldIn, pos, state)
+    part.onRemoved()
+  }
+
 }
 
 object BlockPart {

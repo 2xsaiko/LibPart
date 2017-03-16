@@ -203,4 +203,6 @@ public interface IPart {
 
     default void partChanged() {}
 
+    default void onRemoved() {}
+
 }

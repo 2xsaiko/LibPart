@@ -109,6 +109,8 @@ class BlockMultipart(block: BlockPart) extends IMultipart {
   }
 
   override def onPartChanged(part: IPartInfo, otherPart: IPartInfo): Unit = part.getTile.getTileEntity.asInstanceOf[TilePart].getPart.partChanged()
+
+  override def onRemoved(part: IPartInfo): Unit = part.getTile.getTileEntity.asInstanceOf[TilePart].getPart.onRemoved()
 }
 
 object MPUtils {
