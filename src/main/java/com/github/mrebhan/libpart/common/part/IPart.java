@@ -205,4 +205,5 @@ public interface IPart {
 
     default void onRemoved() {}
 
+    default void onAdded() {}
 }
