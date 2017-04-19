@@ -59,7 +59,7 @@ class TileMultipart(tile: TilePart) extends IMultipartTile {
 class BlockMultipart(block: BlockPart) extends IMultipart {
   override def getBlock: Block = block
 
-  override def getSlotFromWorld(world: IBlockAccess, pos: BlockPos, state: IBlockState): IPartSlot = block.defaultPart.getSlotFromWorld(world, pos, state)
+  override def getSlotFromWorld(world: IBlockAccess, pos: BlockPos, state: IBlockState): IPartSlot = block.defaultPart.getSlotFromWorld(world, pos, state.getActualState(world, pos))
 
   override def getSlotForPlacement(world: World, pos: BlockPos, state: IBlockState, facing: EnumFacing, hitX: Float, hitY: Float, hitZ: Float, placer: EntityLivingBase): IPartSlot =
     block.defaultPart.getSlotForPlacement(world, pos, state, facing, hitX, hitY, hitZ, placer)
@@ -67,16 +67,16 @@ class BlockMultipart(block: BlockPart) extends IMultipart {
   override def getBoundingBox(part: IPartInfo): AxisAlignedBB = part.getTile.getTileEntity.asInstanceOf[TilePart].getPart.getSelectionBox
 
   def onPartPlacedBy(part: IPartInfo, placer: EntityLivingBase, stack: ItemStack, facing: EnumFacing): Unit = {
-    block.onBlockPlacedBy(part.getWorld, part.getPos, part.getState, placer, stack, facing)
+    block.onBlockPlacedBy(part.getPartWorld, part.getPartPos, part.getState, placer, stack, facing)
   }
 
   override def neighborChanged(part: IPartInfo, neighborBlock: Block, neighborPos: BlockPos): Unit = {
     val part1 = part.getTile.getTileEntity.asInstanceOf[TilePart].getPart
     if (!part1.canStay) {
-      getBlock.dropBlockAsItem(part.getActualWorld, part.getPos, part.getState, 0)
+      getBlock.dropBlockAsItem(part.getActualWorld, part.getPartPos, part.getState, 0)
       part.getContainer.removePart(part.getSlot)
     } else {
-      part1.neighborChanged(EnumFacing.VALUES.filter(f => neighborPos.offset(f) == part.getPos).head)
+      part1.neighborChanged(EnumFacing.VALUES.filter(f => neighborPos.offset(f) == part.getPartPos).head)
     }
   }
 
@@ -124,9 +124,12 @@ object MPUtils {
       val tile = BlockMultipartContainer.getTile(world, pos)
       if (tile.isPresent) {
         val slotID = hit.subHit
-        val info = tile.get.getParts.get(MCMultiPart.slotRegistry.getObjectById(slotID))
-        if (info != null)
-          te = info.getTile.getTileEntity
+        val id = MCMultiPart.slotRegistry.getObjectById(slotID)
+        if (id != null) {
+          val info = tile.get.getParts.get(id)
+          if (info != null)
+            te = info.getTile.getTileEntity
+        }
       }
     }
     te match {
@@ -143,7 +146,10 @@ object MPUtils {
           val info = MultipartHelper.getContainer(world, pos).flatMap(c => c.get(slot)).orElse(null)
           if (info != null) {
             ItemBlockMultipart.setMultipartTileNBT(player, stack, info)
-            multipartBlock.onPartPlacedBy(info, player, stack)
+            multipartBlock match {
+              case b: BlockMultipart => b.onPartPlacedBy(info, player, stack, facing)
+              case b => b.onPartPlacedBy(info, player, stack)
+            }
           }
         }
         return true

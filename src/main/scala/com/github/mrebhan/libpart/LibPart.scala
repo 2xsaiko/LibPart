@@ -7,7 +7,7 @@ import org.apache.logging.log4j.{LogManager, Logger}
 /**
   * Created by marco on 24.02.17.
   */
-@Mod(modid = LibPart.MODID, name = LibPart.NAME, version = LibPart.VERSION, modLanguage = "scala", dependencies = "before:mcmultipart")
+@Mod(modid = LibPart.MODID, name = LibPart.NAME, version = LibPart.VERSION, modLanguage = "scala")
 object LibPart {
   final val MODID = "libpart"
   final val VERSION = "1.0.0"
