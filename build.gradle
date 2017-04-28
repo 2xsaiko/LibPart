@@ -53,7 +53,7 @@ dependencies {
     deobfCompile "MCMultiPart2:MCMultiPart-exp:2.0.0_18"
     deobfCompile "mezz.jei:jei_1.11.2:4.2.7.240"
     deobfCompile "pl.asie.charset:charset-api:0.4.0-pre10"
-    compile "org.scala-lang:scala-library:2.12.1"
+    compile "org.scala-lang:scala-library:2.11.11"
 }
 
 processResources {
@@ -79,5 +79,5 @@ sourceSets.main.scala.srcDir "src/main/java"
 sourceSets.main.java.srcDirs = []
 
 tasks.withType(ScalaCompile) {
-    scalaCompileOptions.additionalParameters = ["-Xexperimental"]
+    // scalaCompileOptions.additionalParameters = ["-Xexperimental"]
 }

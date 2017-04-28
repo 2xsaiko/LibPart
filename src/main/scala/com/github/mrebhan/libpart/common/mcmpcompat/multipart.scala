@@ -2,11 +2,12 @@ package com.github.mrebhan.libpart.common.mcmpcompat
 
 import com.github.mrebhan.libpart.LibPart
 import com.github.mrebhan.libpart.common.Registry
+import com.github.mrebhan.libpart.common.ScalaCompat._
 import com.github.mrebhan.libpart.common.block.{BlockPart, TilePart}
 import com.github.mrebhan.libpart.common.part.ICustomIntersect
 import mcmultipart.MCMultiPart
 import mcmultipart.api.addon.{IMCMPAddon, MCMPAddon}
-import mcmultipart.api.container.IPartInfo
+import mcmultipart.api.container.{IMultipartContainer, IPartInfo}
 import mcmultipart.api.item.ItemBlockMultipart
 import mcmultipart.api.multipart._
 import mcmultipart.api.slot.IPartSlot
@@ -28,7 +29,6 @@ import net.minecraftforge.fml.relauncher.{Side, SideOnly}
   */
 @MCMPAddon
 class MCMPCompat extends IMCMPAddon {
-
   override def registerParts(registry: IMultipartRegistry): Unit = {
     for (any <- Registry.multipartQueue) {
       any match {
@@ -36,16 +36,16 @@ class MCMPCompat extends IMCMPAddon {
           registry.registerPartWrapper(block, new BlockMultipart(block))
         case item: ItemBlock =>
           val block = item.getBlock.asInstanceOf[BlockPart]
-          val wrappedblock = registry.registerStackWrapper(item, _ => true, block)
-          wrappedblock.setPlacementInfo((world, pos, facing, hitX, hitY, hitZ, meta, placer, hand, state) =>
+          val wrappedblock = registry.registerStackWrapper(item, (_: ItemStack) => true, block)
+          wrappedblock.setPlacementInfo((world: World, pos: BlockPos, facing: EnumFacing, hitX: Float, hitY: Float, hitZ: Float, meta: Int, placer: EntityLivingBase, hand: EnumHand, state: IBlockState) =>
             block.defaultPart.getStateForPlacement(world, pos, facing, hitX, hitY, hitZ, meta, placer, hand, state))
-          wrappedblock.setBlockPlacementLogic((stack, player, world, pos, facing, hitX, hitY, hitZ, newState) =>
+          wrappedblock.setBlockPlacementLogic((stack: ItemStack, player: EntityPlayer, world: World, pos: BlockPos, facing: EnumFacing, hitX: Float, hitY: Float, hitZ: Float, newState: IBlockState) =>
             player.canPlayerEdit(pos, facing, stack) &&
               world.getBlockState(pos).getBlock.isReplaceable(world, pos) &&
               block.canPlaceBlockAt(world, pos) &&
               block.canPlaceBlockOnSide(world, pos, facing) &&
               item.placeBlockAt(stack, player, world, pos, facing, hitX, hitY, hitZ, newState))
-          wrappedblock.setPartPlacementLogic(MPUtils.placePartAt)
+          wrappedblock.setPartPlacementLogic(MPUtils.placePartAt _)
         case _ => LibPart.LOGGER.warn(s"Invalid object '$any' (${any.getClass}) in multipart registry queue, ignoring.")
       }
     }
@@ -143,7 +143,7 @@ object MPUtils {
     if (multipartBlock.getBlock.canPlaceBlockOnSide(world, pos, facing))
       if (MultipartHelper.addPart(world, pos, slot, state, false)) {
         if (!world.isRemote) {
-          val info = MultipartHelper.getContainer(world, pos).flatMap(c => c.get(slot)).orElse(null)
+          val info = MultipartHelper.getContainer(world, pos).flatMap((c: IMultipartContainer) => c.get(slot)).orElse(null)
           if (info != null) {
             ItemBlockMultipart.setMultipartTileNBT(player, stack, info)
             multipartBlock match {
