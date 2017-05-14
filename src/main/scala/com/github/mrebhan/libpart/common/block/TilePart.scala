@@ -1,6 +1,5 @@
 package com.github.mrebhan.libpart.common.block
 
-import com.github.mrebhan.libpart.LibPart
 import com.github.mrebhan.libpart.common.Registry
 import com.github.mrebhan.libpart.common.mcmpcompat.TileMultipart
 import com.github.mrebhan.libpart.common.part.IPart
@@ -13,7 +12,6 @@ import net.minecraft.network.{NetworkManager, PacketBuffer}
 import net.minecraft.tileentity.TileEntity
 import net.minecraft.util.{EnumFacing, ITickable, ResourceLocation}
 import net.minecraftforge.common.capabilities.Capability
-import org.apache.logging.log4j.Level
 
 /**
   * Created by marco on 27.02.17.
@@ -27,6 +25,7 @@ class TilePart(var rl: ResourceLocation) extends TileEntity {
   private lazy val mp = new TileMultipart(this)
 
   private var rerender = false
+  private var loadedHook = false
 
   def getPart: IPart = part
 
@@ -54,6 +53,10 @@ class TilePart(var rl: ResourceLocation) extends TileEntity {
     rl = new ResourceLocation(nbt.getString("PartType"))
     part = createPart()
     readPartInfo(nbt)
+    if (loadedHook) {
+      part.onLoaded()
+      loadedHook = false
+    }
   }
 
   override def handleUpdateTag(nbt: NBTTagCompound): Unit = {
@@ -92,6 +95,10 @@ class TilePart(var rl: ResourceLocation) extends TileEntity {
       rerender = reRenderClient
     }
   }
+
+  override def onLoad(): Unit = loadedHook = true
+
+  override def onChunkUnload(): Unit = part.onUnloaded()
 
   override def hasCapability(capability: Capability[_], facing: EnumFacing): Boolean = {
     capability match {
